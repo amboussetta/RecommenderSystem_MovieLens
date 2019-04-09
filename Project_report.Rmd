@@ -2,11 +2,21 @@
 title: "MovieLens Capstone"
 author: "Mohammed Amine BOUSSETTA"
 date: "08/04/2019"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
 ---
 
+<style>
+body {
+text-align: justify}
+</style>
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
 library(caret)
 library(dplyr)
 library(tidyverse)
@@ -33,7 +43,7 @@ This report will be structured in three parts: the first one will be dedicated t
 
 ## 1- Prepare the data 
 
-This piece of code was provided by edX to download the dataset and reorganise it into two data frames ("edx", "validation") contianing the movie ID, the user ID, the rating and the timestamp variables.
+This piece of code was provided by edX to download the dataset and reorganise it into two data frames ("edx", "validation") containing the movie ID, the user ID, the rating and the timestamp variables.
 
 ```{r}
 # MovieLens 10M dataset:
@@ -182,9 +192,10 @@ edx %>% ggplot(aes(x=rating)) + geom_histogram(binwidth=0.5, colour="blue",
                       stat_function(fun=dnorm, color="red",args=list(mean, stdv))
                          
 ```
- The distribution is not really normal shaped and we see a negative skewness. There is also no rating with the value 0 and most of the ratings comes exactly at 3 and 4. Why there are more good ratings than bad ones? This could be explained by the fact that when a user watch a movie and like it, he finds the time to rate this movie. But when a user does not like a movie, he simply doesn't bother and pass.
+
+The distribution is not really normal shaped and we see a negative skewness. There is also no rating with the value 0 and most of the ratings comes exactly at 3 and 4. Why there are more good ratings than bad ones? This could be explained by the fact that when a user watch a movie and like it, he finds the time to rate this movie. But when a user does not like a movie, he simply doesn't bother and pass.
  
- Now let's see how the number of ratings evolve with the release year of the movies:
+Now let's see how the number of ratings evolve with the release year of the movies:
  
 ```{r}
 edx %>% ggplot(aes(year)) +
@@ -247,7 +258,8 @@ plot4 <- edx %>%
   ggtitle("Mean rating by movies")
 grid.arrange(plot1, plot2, plot3, plot4, ncol=2, nrow=2)
 ```
-Let's discuss the first row of the facet plot: we see that some users are more active than others, some users are very cranky and others love every movie. The same analysis applies form movies: some movies are rated and appreciated more than others. This makes the variables users, movies and age have a strong impact on the ratings.
+
+Let's discuss the first row of the facet plot: we see that some users are more active than others, some users are very cranky and others love every movie. The same analysis applies for movies: some movies are rated and appreciated more than others. This makes the variables users, movies and age have a strong impact on the ratings.
 
 Finally, let's print the genres and their corresponding average rating by descending order to introduce a technique that will be relevant in our modeling:
 
@@ -277,7 +289,7 @@ In the next sections, we will try different models and report their RMSE in the 
 
 ## 2- Basic model
 The simplest model one can think of is predicting one single value to every input. It can be any statistic but people tend to choose the median and the mean. Of course we can choose to generate random ratings but in general, random predictions are often evaluated negatively. A model that assumes the same rating for all movies and users with all the differences explained by random variation would look like this: $$ Y_{u,i} = \mu + \epsilon_{u,i} $$
-with $\epsilon_{u,i} $ independent errors sampled from the same distribution centered at 0 and $\mu$ the “true” rating for all movies. The best estimator in this case would be the mean of all the ratings.
+with $ \epsilon_{u,i} $ independent errors sampled from the same distribution centered at 0 and $\mu$ the “true” rating for all movies. The best estimator in this case would be the mean of all the ratings.
 
 Let's build this model and report its result:
 
@@ -362,7 +374,8 @@ rmse_results <- bind_rows(rmse_results,
 ```
 
 ### The movie, user and age effect model
-This model will be formulated as: $$ Y_{u,i} = \mu + b_i +b_u + \epsilon_{u,i} $$
+This model will be formulated as: $$ Y_{u,i} = \mu + b_i +b_a + b_g + \epsilon_{u,i} $$
+where $b_g$ is the average of the difference between the age rating and the sum of the global mean rating $\mu$, $b_i$ and $b_a$ 
 
 ```{r}
 # Let's compute the new term bu in our mode y= mu+bi+ba+bg +eps
@@ -409,7 +422,7 @@ save_edx %>% dplyr::count(movieId) %>%
   slice(1:10)
 ```
 
-We see that those movies were only rated by a very few users so our mispredictions comes from this small samples. We can deal with those erros by introducing regularization. The general idea behind it is to constrain the total variability of the effect sizes by adding a penalty term to the least square equation, that gets larger when $b_i$ are large. The penalty term is a parameter that should be tuned to optimise the objective.
+We see that those movies were only rated by a very few users so our mispredictions comes from this small samples. We can deal with those errors by introducing regularization. The general idea behind it is to constrain the total variability of the effect sizes by adding a penalty term to the least square equation, that gets larger when $b_i$ are large. The penalty term is a parameter that should be tuned to optimise the objective.
 
 ```{r}
 # Using regularization and tuning the penalty term
@@ -461,10 +474,12 @@ rmse_results <- bind_rows(rmse_results,
 
 # Result discussion
 In this section, we show our results for the five models we implemented:
+
 ```{r}
 rmse_results %>% knitr::kable(caption = "Summary of the RMSEs")
 ```
-As expected, all the models are better than the one value prediction based on the average. The movieId variable had a strong impact on the rmse and combining it with the usedId made the rmse smaller. The age variable a very small impact comparing to the first two. The best rmse `r model_4_rmse is then obtained by the last model 
+
+As expected, all the models are better than the one value prediction based on the average. The movieId variable had a strong impact on the rmse and combining it with the usedId made the rmse smaller. The age variable a very small impact comparing to the first two. The best rmse `r min(rmses)` is then obtained by the last model 
 
 # Conclusion
 

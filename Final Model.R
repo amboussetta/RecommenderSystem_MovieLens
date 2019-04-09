@@ -1,22 +1,10 @@
 library(caret)
 library(dplyr)
-library(tidyverse)
 library(lubridate)
-library("e1071")
-library("genefilter")
-library(dslabs)
-library(rpart)
-library(rpart.plot)
-library(randomForest)
-library(Rborist)
-library(purrr)
 library(Metrics)
-library(RColorBrewer)
 library(matrixStats)
 library(stringr)
 library(gridExtra)
-library(recosystem)
-library(Hmisc)
 
 
 #________________________________________________#
@@ -147,7 +135,7 @@ plot1 <- edx %>% ggplot(aes(age)) +
 
 plot2 <- edx %>% 
   group_by(age) %>% 
-  summarize(b_a = mean(rating)) %>% 
+  summarise(b_a = mean(rating)) %>% 
   ggplot(aes(b_a)) + 
   geom_histogram(color = "darkblue") +
   ggtitle("Mean rating by age of the movie")
@@ -163,7 +151,7 @@ plot1 <- edx %>%
   ggtitle("Rating count by users")
 plot2 <- edx %>% 
   group_by(userId) %>% 
-  summarize(b_u = mean(rating)) %>% 
+  summarise(b_u = mean(rating)) %>% 
   filter(n()>=100) %>%
   ggplot(aes(b_u)) + 
   geom_histogram(bins = 30, color = "darkblue") +
@@ -176,7 +164,7 @@ plot3 <- edx %>%
   ggtitle("Rating count by movies")
 plot4 <- edx %>% 
   group_by(userId) %>% 
-  summarize(b_m = mean(rating)) %>% 
+  summarise(b_m = mean(rating)) %>% 
   filter(n()>=100) %>%
   ggplot(aes(b_m)) + 
   geom_histogram(bins = 30, color = "darkblue") +
@@ -187,7 +175,7 @@ grid.arrange(plot1, plot2, plot3, plot4, ncol=2, nrow=2)
 edx %>%
   select(genres, rating) %>%
   group_by(genres) %>%
-  summarize(mean = mean(rating), median = median(rating), n = n()) %>%
+  summarise(mean = mean(rating), median = median(rating), n = n()) %>%
   arrange(desc(mean)) %>%
   head(10)
 
@@ -216,7 +204,7 @@ rmse_results <- data_frame(method = "Just the average", RMSE = naive_rmse)
 mu <- mean(edx$rating) 
 movie_avgs <- edx %>% 
   group_by(movieId) %>% 
-  summarize(b_i = mean(rating - mu))
+  summarise(b_i = mean(rating - mu))
 # then, make the prediction using the new model y= mu + b
 predicted_ratings <- mu + validation %>% 
   left_join(movie_avgs, by='movieId') %>%
@@ -237,7 +225,7 @@ rmse_results <- bind_rows(rmse_results,
 mu <- mean(edx$rating) 
 user_avgs <- edx %>% 
   group_by(userId) %>% 
-  summarize(b_u = mean(rating - mu))
+  summarise(b_u = mean(rating - mu))
 # then, make the prediction using the new model y= mu + b
 predicted_ratings <- mu + validation %>% 
   left_join(user_avgs, by='userId') %>%
@@ -259,7 +247,7 @@ rmse_results <- bind_rows(rmse_results,
 mvuser_avgs <- edx %>% 
   left_join(movie_avgs, by='movieId') %>%
   group_by(userId) %>%
-  summarize(b_a = mean(rating - mu - b_i))
+  summarise(b_a = mean(rating - mu - b_i))
 # Now, compute the predicted ratings using the new model with user and movie effects:
 predicted_ratings <- validation %>% 
   left_join(movie_avgs, by='movieId') %>%
@@ -282,7 +270,7 @@ age_avgs <- edx %>%
   left_join(movie_avgs, by='movieId') %>%
   left_join(mvuser_avgs, by='userId') %>%
   group_by(age) %>%
-  summarize(b_g = mean(rating - mu - b_i - b_a))
+  summarise(b_g = mean(rating - mu - b_i - b_a))
 
 # process the variable age so that leftjoin finds values in LHS
 listofages <- unique(age_avgs$age)
@@ -330,12 +318,12 @@ rmses <- sapply(lambdas, function(l){
   
   b_i <- edx %>% 
     group_by(movieId) %>%
-    summarize(b_i = sum(rating - mu)/(n()+l))
+    summarise(b_i = sum(rating - mu)/(n()+l))
   
   b_a <- edx %>% 
     left_join(b_i, by="movieId") %>%
     group_by(userId) %>%
-    summarize(b_a = sum(rating - b_i - mu)/(n()+l))
+    summarise(b_a = sum(rating - b_i - mu)/(n()+l))
   
 
   
